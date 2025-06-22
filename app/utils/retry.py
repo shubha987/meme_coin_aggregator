@@ -25,3 +25,6 @@ def retry_with_backoff(max_retries: int = 3, base_delay: float = 1.0, max_delay:
         return wrapper
     return decorator
 
+# Add this alias to fix the test import
+retry = retry_with_backoff
+

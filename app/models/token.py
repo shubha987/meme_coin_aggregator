@@ -1,6 +1,6 @@
 # app/models/token.py
 from pydantic import BaseModel, Field
-from typing import Optional, List
+from typing import Optional, List, Any
 from datetime import datetime
 
 class TokenData(BaseModel):
@@ -24,5 +24,5 @@ class TokenListResponse(BaseModel):
 
 class WebSocketMessage(BaseModel):
     type: str = Field(..., description="Message type")
-    data: dict = Field(..., description="Message payload")
+    data: Any = Field(..., description="Message payload")  # Change from dict to Any
     timestamp: datetime = Field(default_factory=datetime.utcnow)
