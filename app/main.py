@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from app.api.routes import tokens, websocket
 from app.core.cache import cache_manager
 from app.services.aggregation import aggregation_service
+from app.middleware.middleware import RateLimitMiddleware  # Import the middleware
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -23,6 +24,9 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan
 )
+
+# Add the rate limit middleware
+app.add_middleware(RateLimitMiddleware, calls=100, period=60)
 
 # Include routers
 app.include_router(tokens.router, prefix="/api/v1", tags=["tokens"])
