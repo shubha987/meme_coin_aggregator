@@ -156,28 +156,60 @@ class DataAggregationService:
                 
                 if existing_token:
                     # Update existing token with additional data
-                    existing_token.transaction_count += int(pair.get("txns", {}).get("h24", 0))
+                    txns = pair.get("txns", {}).get("h24", {})
+                    # Make sure we're handling the different possible formats of txns
+                    if isinstance(txns, dict):
+                        txn_count = txns.get("buys", 0) + txns.get("sells", 0)
+                    else:
+                        txn_count = int(txns) if txns else 0
+                        
+                    existing_token.transaction_count += txn_count
                     
                     # Use the protocol with higher liquidity
-                    if float(pair.get("liquidity", {}).get("usd", 0)) > existing_token.liquidity_sol:
+                    liquidity_usd = pair.get("liquidity", {}).get("usd", 0)
+                    if isinstance(liquidity_usd, (int, float)) and liquidity_usd > existing_token.liquidity_sol:
                         existing_token.protocol = pair.get("dexId", "Unknown")
-                        existing_token.liquidity_sol = float(pair.get("liquidity", {}).get("usd", 0))
+                        existing_token.liquidity_sol = float(liquidity_usd)
                 else:
                     # Create new token entry
                     try:
-                        # Get Jupiter price if available
-                        jupiter_price = jupiter_data.get("data", {}).get(token_address, {}).get("price", 0)
+                        # Get price
+                        price_usd = pair.get("priceUsd", 0)
+                        price_sol = float(price_usd) if price_usd else 0
+                        
+                        # Get liquidity
+                        liquidity = pair.get("liquidity", {}).get("usd", 0)
+                        liquidity_sol = float(liquidity) if liquidity else 0
+                        
+                        # Get volume
+                        volume = pair.get("volume", {}).get("h24", 0)
+                        volume_sol = float(volume) if volume else 0
+                        
+                        # Get transaction count
+                        txns = pair.get("txns", {}).get("h24", {})
+                        if isinstance(txns, dict):
+                            txn_count = txns.get("buys", 0) + txns.get("sells", 0)
+                        else:
+                            txn_count = int(txns) if txns else 0
+                        
+                        # Get price change
+                        price_change = pair.get("priceChange", {}).get("h1", 0)
+                        price_1hr_change = float(price_change) if price_change else 0
+                        
+                        # Get market cap (fdv)
+                        market_cap = pair.get("fdv", 0)
+                        market_cap_sol = float(market_cap) if market_cap else 0
                         
                         token = TokenData(
                             token_address=token_address,
                             token_name=base_token.get("name", "Unknown"),
                             token_ticker=base_token.get("symbol", "UNKNOWN"),
-                            price_sol=float(pair.get("priceUsd", 0)),
-                            market_cap_sol=float(pair.get("fdv", 0)),
-                            volume_sol=float(pair.get("volume", {}).get("h24", 0)),
-                            liquidity_sol=float(pair.get("liquidity", {}).get("usd", 0)),
-                            transaction_count=int(pair.get("txns", {}).get("h24", 0)),
-                            price_1hr_change=float(pair.get("priceChange", {}).get("h1", 0)),
+                            price_sol=price_sol,
+                            market_cap_sol=market_cap_sol,
+                            volume_sol=volume_sol,
+                            liquidity_sol=liquidity_sol,
+                            transaction_count=txn_count,
+                            price_1hr_change=price_1hr_change,
                             protocol=pair.get("dexId", "Unknown")
                         )
                         result.append(token)

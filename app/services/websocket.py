@@ -27,6 +27,10 @@ class WebSocketManager:
             self.subscriptions[topic] = set()
         self.subscriptions[topic].add(websocket)
     
+    def unsubscribe(self, websocket: WebSocket, topic: str):
+        if topic in self.subscriptions and websocket in self.subscriptions[topic]:
+            self.subscriptions[topic].discard(websocket)
+    
     async def broadcast_to_topic(self, topic: str, message: dict):
         if topic not in self.subscriptions:
             return
@@ -34,6 +38,7 @@ class WebSocketManager:
         disconnected = []
         for websocket in self.subscriptions[topic]:
             try:
+                # Make sure we're using await here
                 await websocket.send_text(json.dumps(message))
             except Exception:
                 disconnected.append(websocket)

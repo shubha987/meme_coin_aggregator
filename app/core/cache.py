@@ -38,6 +38,11 @@ class CacheManager:
         keys = await self.redis.keys(pattern)
         if keys:
             await self.redis.delete(*keys)
+    
+    async def disconnect(self):
+        if self.redis:
+            self.redis.close()
+            await self.redis.wait_closed()
 
 cache_manager = CacheManager()
 
